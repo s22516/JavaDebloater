@@ -159,11 +159,11 @@ def step(state: State) -> State | str:
         case jvm.Incr(index=i, amount=amt):
             v = frame.locals[i]
             if not isinstance(v, sign.SignSet):
-                v: sign.SignSet = sign.SignSet.abstract(sign.SignSet, v.value)
+                v: sign.SignSet = sign.SignSet.abstract( v.value)
             if not isinstance(amt, sign.SignSet):
-                amt: sign.SignSet = sign.SignSet.abstract(sign.SignSet, amt)
+                amt: sign.SignSet = sign.SignSet.abstract( amt)
             
-            v = v.add(sign.SignSet.abstract(sign.SignSet, amt))
+            v = v.add(sign.SignSet.abstract( amt))
             frame.pc += 1
             return state
         
@@ -171,9 +171,9 @@ def step(state: State) -> State | str:
             v2, v1 = frame.stack.pop(), frame.stack.pop()
 
             if not isinstance(v1, sign.SignSet):
-                v1: sign.SignSet = sign.SignSet.abstract(sign.SignSet, v1.value)
+                v1: sign.SignSet = sign.SignSet.abstract( v1.value)
             if not isinstance(v2, sign.SignSet):
-                v2: sign.SignSet = sign.SignSet.abstract(sign.SignSet, v2.value)
+                v2: sign.SignSet = sign.SignSet.abstract( v2.value)
 
             if oper == jvm.BinaryOpr.Div:
                 res = v1.div(v2)
@@ -266,24 +266,28 @@ def step(state: State) -> State | str:
             v = frame.stack.pop()
 
             if not isinstance(v, sign.SignSet):
-                v: sign.SignSet = sign.SignSet.abstract(sign.SignSet, v.value)
+                v: sign.SignSet = sign.SignSet.abstract(v.value)
+
+            logger.debug(f"IFZ on {v.signs} with condition {cond}")
+            logger.debug(f"Signs: {v}")
 
             take_branch = False
             if cond == "eq":
-                take_branch = ({"0"} in v.signs)
+                take_branch = (v.contains("0"))
             elif cond == "ne":
-                take_branch = ({"+"} in v.signs or {"-"} in v.signs)
+                take_branch = (not v.contains("0"))
             elif cond == "lt":
-                take_branch = ({"-"} in v.signs)
+                take_branch = (v.contains("-"))
             elif cond == "gt":
-                take_branch = ({"+"} in v.signs)
+                take_branch = (v.contains("+"))
             elif cond == "ge":
-                take_branch = ({"0"} in v.signs or {"+"} in v.signs)
+                take_branch = (v.contains("0") or v.contains("+"))
             elif cond == "le":
-                take_branch = ({"0"} in v.signs or {"-"} in v.signs)
+                take_branch = (v.contains("0") or v.contains("-"))
             else:
                 raise NotImplementedError(f"Unhandled ifz condition: {cond}")
 
+            logger.debug(f"Taking branch: {take_branch}")
             if take_branch:
                 frame.pc = PC(frame.pc.method, target)
             else:
@@ -296,25 +300,32 @@ def step(state: State) -> State | str:
             take_branch = False
 
             if isinstance(v1, jvm.Int):
-                v1: sign.SignSet = sign.SignSet.abstract(sign.SignSet, v1.value)
+                v1: sign.SignSet = sign.SignSet.abstract( v1.value)
             if isinstance(v2, jvm.Int):
-                v2: sign.SignSet = sign.SignSet.abstract(sign.SignSet, v2.value)
+                v2: sign.SignSet = sign.SignSet.abstract( v2.value)
 
             if isinstance(v1, sign.SignSet) and isinstance(v2, sign.SignSet):
                 if cond == "eq":
+                    # Take the branch if v1 and v2 share any common signs
                     take_branch = not v1.signs.isdisjoint(v2.signs)
                 elif cond == "ne":
-                    take_branch = not (v1.signs == {"0"} and v2.signs == {"0"})
+                    # Take the branch if v1 and v2 do not share exactly the same signs
+                    take_branch = not v1.contains("0") and v2.contains("0")
                 elif cond == "lt":
-                    take_branch = ({"-"} in v1.signs and ({"0"} in v2.signs or {"+"} in v2.signs or {"-"} in v2.signs)) or (({"0"} in v1.signs or {"+"} in v1.signs) and {"+"} in v2.signs) 
-                elif cond == "le": 
-                    take_branch = ({"-"} in v1.signs and ({"0"} in v2.signs or {"+"} in v2.signs or {"-"} in v2.signs)) or ({"0"} in v1.signs and ({"0"} in v2.signs or {"+"} in v2.signs)) or ({"+"} in v1.signs and {"+"} in v2.signs)
-                elif cond == "ge": 
-                    take_branch = not (({"-"} in v1.signs and ({"0"} in v2.signs or {"+"} in v2.signs or {"-"} in v2.signs)) or (({"0"} in v1.signs or {"+"} in v1.signs) and {"+"} in v2.signs))
+                    # Take the branch if v1 has "-" and v2 has "+" or "0"
+                    take_branch = v1.contains("-") and (v2.contains("0") or v2.contains("+"))
+                elif cond == "le":
+                    # Take the branch if v1 has "-" or "0" and v2 has "+" or "0"
+                    take_branch = (v1.contains("-") or v1.contains("0")) and (v2.contains("0") or v2.contains("+"))
+                elif cond == "ge":
+                    # Take the branch if v1 has "+" or "0" and v2 has "-" or "0"
+                    take_branch = (v1.contains("+") or v1.contains("0")) and (v2.contains("0") or v2.contains("-"))
                 elif cond == "gt":
-                    take_branch = not (({"-"} in v1.signs and ({"0"} in v2.signs or {"+"} in v2.signs or {"-"} in v2.signs)) or ({"0"} in v1.signs and ({"0"} in v2.signs or {"+"} in v2.signs)) or ({"+"} in v1.signs and {"+"} in v2.signs))
+                    # Take the branch if v1 has "+" and v2 has "-" or "0"
+                    take_branch = v1.contains("+") and (v2.contains("0") or v2.contains("-"))
                 else:
                     raise NotImplementedError(f"Unhandled If condition: {cond}")
+
             
             elif not isinstance(v1, sign.SignSet) and not isinstance(v2, sign.SignSet):
                 if cond == "eq":

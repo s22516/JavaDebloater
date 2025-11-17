@@ -1,34 +1,33 @@
 from dataclasses import dataclass
 from typing import TypeAlias, Literal
 
-Sign : TypeAlias = Literal["+"] | Literal["-"] | Literal["0"]
+from dataclasses import dataclass
+from typing import TypeAlias, Literal
+
+# Define Sign as a type alias for the allowed literals
+Sign: TypeAlias = Literal["+", "-", "0"]
 
 @dataclass
 class SignSet:
     signs: set[Sign]
 
-    def __contains__(self, member: str):
-        if member in self.signs:
-            return True
-        return False
+    def contains(self, sign: str) -> bool:
+        """Check if the SignSet contains a specific sign."""
+        return sign in self.signs
 
     @classmethod
-    def abstract(self, cls, num: int):
-        signset = set()
+    def abstract(cls, num: int) -> "SignSet":
+        """Create a SignSet based on the value of the number."""
         if num == 0:
-            signset.add("0")
-        if num > 0:
-            signset.add("+")
-        if num < 0: 
-            signset.add("-")
-        return cls(signset)
-    
-    def literal(self): 
-        return self.signs
+            return cls({"0"})
+        elif num > 0:
+            return cls({"+"})
+        else:  # num < 0
+            return cls({"-"})
     
     def add(self, other: "SignSet") -> "SignSet":
         result_signs = set()
-        if "+" in self.signs and "+" in other.signs:
+        if self.contains("+") and other.contains("+"):
             result_signs.add("+")
         if "-" in self.signs and "-" in other.signs:
             result_signs.add("-")
