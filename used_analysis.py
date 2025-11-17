@@ -10,7 +10,8 @@ from jpamb import jvm
 class UseStatus(Enum):
     NOT_USED = auto()        
     PROBABLY_USED = auto()   
-    USED = auto()            
+    USED = auto()    
+        
 
 
 def join_status(a: UseStatus, b: UseStatus) -> UseStatus:
@@ -69,11 +70,13 @@ class MethodUsage:
 
 def compute_usage(suite: jpamb.Suite) -> Dict[jvm.AbsMethodID, MethodUsage]:
     all_methods: Set[jvm.AbsMethodID] = set()
+    
     for method, _input in suite.case_methods():
         all_methods.add(method)
 
     entry_methods: Set[jvm.AbsMethodID] = set()
     for method, _input in suite.case_methods():
+        print(method.extension.name)
         entry_methods.add(method)
 
     reachable: Dict[jvm.AbsMethodID, Set[int]] = {}
@@ -106,10 +109,6 @@ def compute_usage(suite: jpamb.Suite) -> Dict[jvm.AbsMethodID, MethodUsage]:
 
 
 def main() -> None:
-    import sys
-
-    print("RUNTIME PYTHON:", sys.version)
-    print("EXECUTABLE:", sys.executable)
 
     suite = jpamb.Suite()
     usage_info = compute_usage(suite)
@@ -123,7 +122,7 @@ def main() -> None:
             case UseStatus.NOT_USED:
                 tag = "is not used"
 
-        print(f"{m} -> {tag} (at PCs: {sorted(info.reachable_pcs)})")
+        print(f"{m} -> {tag})")
 
 
 if __name__ == "__main__":
