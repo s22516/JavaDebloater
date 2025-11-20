@@ -295,54 +295,46 @@ def step(state: State) -> State | str:
             return state
 
         case jvm.If(condition=cond, target=target):
+            # Pop right, then left (same order as your concrete interpreter)
             v2 = frame.stack.pop()
             v1 = frame.stack.pop()
-            take_branch = False
 
-            if isinstance(v1, jvm.Int):
-                v1: sign.SignSet = sign.SignSet.abstract( v1.value)
-            if isinstance(v2, jvm.Int):
-                v2: sign.SignSet = sign.SignSet.abstract( v2.value)
+            # --- Normalise both to SignSet ---
 
-            if isinstance(v1, sign.SignSet) and isinstance(v2, sign.SignSet):
-                if cond == "eq":
-                    # Take the branch if v1 and v2 share any common signs
-                    take_branch = not v1.signs.isdisjoint(v2.signs)
-                elif cond == "ne":
-                    # Take the branch if v1 and v2 do not share exactly the same signs
-                    take_branch = not v1.contains("0") and v2.contains("0")
-                elif cond == "lt":
-                    # Take the branch if v1 has "-" and v2 has "+" or "0"
-                    take_branch = v1.contains("-") and (v2.contains("0") or v2.contains("+"))
-                elif cond == "le":
-                    # Take the branch if v1 has "-" or "0" and v2 has "+" or "0"
-                    take_branch = (v1.contains("-") or v1.contains("0")) and (v2.contains("0") or v2.contains("+"))
-                elif cond == "ge":
-                    # Take the branch if v1 has "+" or "0" and v2 has "-" or "0"
-                    take_branch = (v1.contains("+") or v1.contains("0")) and (v2.contains("0") or v2.contains("-"))
-                elif cond == "gt":
-                    # Take the branch if v1 has "+" and v2 has "-" or "0"
-                    take_branch = v1.contains("+") and (v2.contains("0") or v2.contains("-"))
+            if not isinstance(v1, sign.SignSet):
+                v1 = sign.SignSet.abstract(v1.value)
+                
+            if not isinstance(v2, sign.SignSet):
+                v2 = sign.SignSet.abstract(v2.value)
+
+            def has(s: sign.SignSet, sym: str) -> bool:
+                return sym in s.signs
+
+
+            if cond == "eq":
+                take_branch = not v1.signs.isdisjoint(v2.signs)
+
+            elif cond == "ne":
+                take_branch = v1.signs != v2.signs
+
+            elif cond == "lt":
+                take_branch = has(v1, "-") and (has(v2, "0") or has(v2, "+"))
+
+            elif cond == "le":
+                take_branch = has(v1, "-") or has(v1, "0")
+
+            elif cond == "ge":
+                take_branch = has(v1, "+") or has(v1, "0")
+
+            elif cond == "gt":
+                if v2.signs == {"-"}:
+                    take_branch = True
                 else:
-                    raise NotImplementedError(f"Unhandled If condition: {cond}")
-
+                    take_branch = has(v1, "+") and not has(v2, "+")
+            else:
+                raise NotImplementedError(f"Unhandled If condition: {cond}")
             
-            elif not isinstance(v1, sign.SignSet) and not isinstance(v2, sign.SignSet):
-                if cond == "eq":
-                    take_branch = (v1.value == v2.value)
-                elif cond == "ne":
-                    take_branch = (v1.value != v2.value)
-                elif cond == "lt":
-                    take_branch = (v1.value < v2.value)
-                elif cond == "ge":
-                    take_branch = (v1.value >= v2.value)
-                elif cond == "gt":
-                    take_branch = (v1.value > v2.value)
-                elif cond == "le":
-                    take_branch = (v1.value <= v2.value)
-                else:
-                    raise NotImplementedError(f"Unhandled If condition: {cond}")
-
+            print(take_branch)
             if take_branch:
                 frame.pc = PC(frame.pc.method, target)
             else:
