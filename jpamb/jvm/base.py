@@ -623,6 +623,14 @@ class Value:
     @classmethod
     def array(cls, type: Type, content: Iterable) -> Self:
         return cls(Array(type), tuple(content))
+    
+    @classmethod
+    def double(cls, x: float) -> Self:
+        return cls(Double(), x)
+
+    @classmethod
+    def string(cls, s: str) -> Self:
+        return cls(Reference(), s)
 
     @classmethod
     def from_json(cls, json: dict | None) -> Self:
@@ -658,11 +666,13 @@ class ValueParser:
     @staticmethod
     def tokenize(string):
         token_specification = [
-            ("OPEN_ARRAY", r"\[[IC]:"),
+            ("OPEN_ARRAY", r"\[[IC]:"),      # [I: or [C:
             ("CLOSE_ARRAY", r"\]"),
-            ("INT", r"-?\d+"),
+            ("FLOAT", r"-?\d+\.\d+"),       # NEW: doubles like -1.0, 2.5
+            ("INT", r"-?\d+"),              # integers (order matters: FLOAT before INT)
             ("BOOL", r"true|false"),
-            ("CHAR", r"'[^']'"),
+            ("STRING", r"\"[^\"]*\""),      # NEW: "foo", "bar", ""
+            ("CHAR", r"'[^']'"),            # single char: 'x'
             ("COMMA", r","),
             ("SKIP", r"[ \t]+"),
         ]
@@ -704,10 +714,14 @@ class ValueParser:
     def parse_value(self):
         next = self.head or self.expected("token")
         match next.kind:
+            case "FLOAT":
+                return Value.double(self.parse_float())
             case "INT":
                 return Value.int(self.parse_int())
             case "CHAR":
                 return Value.char(self.parse_char())
+            case "STRING":
+                return Value.string(self.parse_string())
             case "BOOL":
                 return Value.boolean(self.parse_bool())
             case "OPEN_ARRAY":
@@ -718,6 +732,10 @@ class ValueParser:
         tok = self.expect("INT")
         return int(tok.value)
 
+    def parse_float(self): 
+        tok = self.expect("FLOAT")
+        return float(tok.value)
+
     def parse_bool(self):
         tok = self.expect("BOOL")
         return tok.value == "true"
@@ -726,6 +744,10 @@ class ValueParser:
         tok = self.expect("CHAR")
         return tok.value[1]
 
+    def parse_string(self):
+        tok = self.expect("STRING")
+        return tok.value[1:-1]
+    
     def parse_array(self):
         key = self.expect("OPEN_ARRAY")
         if key.value == "[I:":  # ]

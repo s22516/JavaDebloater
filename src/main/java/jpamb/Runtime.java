@@ -53,7 +53,9 @@ public class Runtime {
       b.append("[I");
     } else if (c.equals(char[].class)) {
       b.append("[C");
-    } else {
+    } else if(c.equals(String.class)){
+      b.append("Ljava/lang/String;");
+    }else {
       throw new RuntimeException("Unknown type:" + c.toString());
     }
   }
@@ -77,14 +79,30 @@ public class Runtime {
           params.add(int.class);
           break;
         }
+        case 'D' -> {
+          params.add(double.class);
+          break;
+        }
         case 'Z' -> {
           params.add(boolean.class);
+          break;
+        }
+        case 'L' -> {
+          int semicolonIndex = s.indexOf(';', i);
+          String className = s.substring(i + 1, semicolonIndex).replace('/', '.');
+          try {
+            params.add(Class.forName(className));
+          } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Unknown class type: " + className);
+          }
+          i = semicolonIndex;
           break;
         }
         case 'C' -> {
           params.add(char.class);
           break;
         }
+        
         case '[' -> {
           i += 1;
           switch (s.charAt(i)) {

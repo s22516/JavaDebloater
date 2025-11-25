@@ -19,7 +19,27 @@ public class Signs {
         return -5;
     }
 
-    
+    @Case("(1.0, 2.5) -> ok")
+    @Case("(-1.0, 2.0) -> ok")
+    @Case("(-1.0, -2.0) -> ok")
+    public static void addDoubles(double a, double b) {
+        double c = a + b;
+        assert c > -1000000.0;
+    }
+
+    @Case("(1.0, 2.5) -> ok")
+    @Case("(3.0, 3.0) -> assertion error")
+    public static void compareDoubles(double a, double b) {
+        assert a < b;
+    }
+
+    @Case("(\"foo\", \"bar\") -> ok")
+    @Case("(\"hi\", \"baz\") -> ok")
+    public static void concatStrings(String a, String b) {
+        String s = a + b;
+        assert s.length() >= b.length();
+    }
+
     @Case("(5) -> ok")
     @Case("(0) -> ok")
     @Case("(-5) -> ok")
@@ -32,25 +52,9 @@ public class Signs {
             assert x < 0;   // negative branch
         }
     }
-
-       
-    @Case("(1.0, 2.5) -> ok")
-    @Case("(-1.0, 2.0) -> ok")
-    @Case("(-1.0, -2.0) -> ok")
-    public static void addDoubles(double a, double b) {
-        double c = a + b;
-        assert c > -1000000.0;
-    }
-
-
-    @Case("(\"foo\", \"bar\") -> ok")
-    @Case("(\"\", \"baz\") -> ok")
-    public static void concatStrings(String a, String b) {
-        String s = a + b;
-        assert s.length() >= b.length();
-    }
-
   
+    @Case("(5, 5) -> ok")
+    @Case("(5, -5) -> ok")
     @Case("(-5, -5) -> ok")
     public static void addSigns(int a, int b) {
         int c = a + b;

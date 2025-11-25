@@ -26,7 +26,14 @@ public class InputParser {
   private void nextToken() {
     if (sc.hasNext()) {
       currentToken = sc.findWithinHorizon(
-          "[-]?[0-9\\.]+|\\[[ICZ]:|\\(|\\)|\\]|,|'[^']*'|true|false", 0);
+          "[-]?[0-9]*\\.[0-9]+|" +   
+          "[-]?[0-9]+|" +           
+          "\\[[ICZ]:|" +             
+          "\\(|\\)|\\]|," +          
+          "|'[^']*'" +               
+          "|\"[^\"]*\"" +            
+          "|true|false",            
+          0);
     } else {
       currentToken = null;
     }
@@ -44,22 +51,35 @@ public class InputParser {
   }
 
   private Object parseInput() {
-    if (currentToken.matches("[-]?[0-9]+")) {
+    if (currentToken != null && currentToken.matches("[-]?[0-9]+\\.[0-9]+")) {
+      double value = Double.parseDouble(currentToken);
+      nextToken();
+      return value;
+    }
+    else if (currentToken != null && currentToken.matches("[-]?[0-9]+")) {
       int value = Integer.parseInt(currentToken);
       nextToken();
       return value;
-    } else if (currentToken.matches("'[^']+'")) {
-      // TODO does not handle '\''
-      return currentToken.charAt(1);
-    } else if (currentToken.equals("true")) {
+    }
+    if (currentToken != null && currentToken.matches("\"[^\"]*\"")) {
+      String s = currentToken.substring(1, currentToken.length() - 1); // strip quotes
+      nextToken();
+      return s;
+    }
+    if (currentToken != null && currentToken.matches("'[^']+'")) {
+      char c = currentToken.charAt(1);
+      nextToken();
+      return c;
+    }
+    else if ("true".equals(currentToken)) {
       nextToken();
       return true;
-    } else if (currentToken.equals("false")) {
+    } else if ("false".equals(currentToken)) {
       nextToken();
       return false;
-    } else if (currentToken.equals("[I:")) {
+    } else if ("[I:".equals(currentToken)) {
       return parseIntList();
-    } else if (currentToken.equals("[C:")) {
+    } else if ("[C:".equals(currentToken)) {
       return parseCharList();
     } else {
       expected("input");
