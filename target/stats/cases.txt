@@ -29,12 +29,19 @@ jpamb.cases.Loops.forever:()V                                () -> *
 jpamb.cases.Loops.neverAsserts:()V                           () -> *
 jpamb.cases.Loops.neverDivides:()I                           () -> *
 jpamb.cases.Loops.terminates:()V                             () -> assertion error
+jpamb.cases.Signs.addDoubles:(DD)V                           (-1.0, -2.0) -> ok
+jpamb.cases.Signs.addDoubles:(DD)V                           (-1.0, 2.0) -> ok
+jpamb.cases.Signs.addDoubles:(DD)V                           (1.0, 2.5) -> ok
 jpamb.cases.Signs.addSigns:(II)V                             (-5, -5) -> ok
 jpamb.cases.Signs.addSigns:(II)V                             (5, -5) -> ok
 jpamb.cases.Signs.addSigns:(II)V                             (5, 5) -> ok
 jpamb.cases.Signs.classifySign:(I)V                          (-5) -> ok
 jpamb.cases.Signs.classifySign:(I)V                          (0) -> ok
 jpamb.cases.Signs.classifySign:(I)V                          (5) -> ok
+jpamb.cases.Signs.compareDoubles:(DD)V                       (1.0, 2.5) -> ok
+jpamb.cases.Signs.compareDoubles:(DD)V                       (3.0, 3.0) -> assertion error
+jpamb.cases.Signs.concatStrings:(Ljava/lang/String;Ljava/lang/String;)V (foo, bar) -> ok
+jpamb.cases.Signs.concatStrings:(Ljava/lang/String;Ljava/lang/String;)V (hi, baz) -> ok
 jpamb.cases.Signs.requirePositive:(I)V                       (-5) -> assertion error
 jpamb.cases.Signs.requirePositive:(I)V                       (0) -> assertion error
 jpamb.cases.Signs.requirePositive:(I)V                       (5) -> ok
