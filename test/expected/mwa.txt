@@ -1,0 +1,131 @@
+﻿======================================================================
+  Machine Word Abstract Domains - Test Suite
+======================================================================
+
+=== Testing Bitfield Domain ===
+
+b1 = 00000101 (5 in binary)
+b2 = 00000011 (3 in binary)
+
+AND: 00000101 & 00000011 = 00000001
+OR:  00000101 | 00000011 = 00000111
+XOR: 00000101 ^ 00000011 = 00000110
+NOT: ~00000101 = 11111010
+
+Unknown bitfield: ⊥⊥⊥⊥⊥⊥⊥⊥
+Join 00000000 and 00000101 = 00000⊥0⊥
+
+=== Testing Signed Intervals ===
+
+s1 = SignedInterval(low=-100, high=100, bit_width=32)
+s2 = SignedInterval(low=50, high=150, bit_width=32)
+
+Arithmetic:
+s1 + zero = [-100, 100]
+s2 - zero = [50, 150]
+s1 * zero = [0, 0]
+-s1 = [-100, 100]
+
+Bitwise:
+[12,12] & [10,10] = [0, 10]
+[12,12] | [10,10] = [0, 12]
+[12,12] ^ [10,10] = [0, 12]
+
+Shifts:
+[8,8] << 2 = [32, 32]
+[8,8] >> 1 = [4, 4]
+
+Lattice operations:
+s1 join s2 = [-100, 150]
+s1 meet s2 = [50, 100]
+s1 widen s2 = [-100, +∞]
+
+=== Testing Unsigned Intervals ===
+
+u1 = UnsignedInterval(low=0, high=100, bit_width=32)
+u2 = UnsignedInterval(low=50, high=200, bit_width=32)
+u1 + u2 = [50, 300]
+u2 - u1 = [-50, 200]
+u1 * u2 = [0, 20000]
+
+Underflow test: UnsignedInterval(low=0, high=10, bit_width=32) - UnsignedInterval(low=20, high=30, bit_width=32) = [-30, -10]
+
+=== Loop Analysis with Widening ===
+
+Analyzing: i = 0; while(i < 1000000) i++;
+
+Initial: i = SignedInterval(low=0, high=0, bit_width=32)
+Iteration 1: SignedInterval(low=0, high=0, bit_width=32) + [1,1] = [1, 1]
+  Result: [1, 1]
+Iteration 2: [1, 1] + [1,1] = [2, 2]
+  Result: [2, 2]
+Iteration 3: [2, 2] + [1,1] = [3, 3]
+  -> Applying widening
+  Result: [2, +∞]
+Iteration 4: [2, +∞] + [1,1] = [3, +∞]
+  Result: [3, +∞]
+Iteration 5: [3, +∞] + [1,1] = [4, +∞]
+  Result: [4, +∞]
+Iteration 6: [4, +∞] + [1,1] = [5, +∞]
+  Result: [5, +∞]
+Iteration 7: [5, +∞] + [1,1] = [6, +∞]
+  Result: [6, +∞]
+
+Final: i ∈ [6, +∞]
+
+=== Division by Zero Detection ===
+
+Denominator: SignedInterval(low=1, high=10, bit_width=32)
+Can be zero? False
+Status: SAFE
+
+Denominator: SignedInterval(low=-5, high=5, bit_width=32)
+Can be zero? True
+Status: UNSAFE
+
+After meet with [1,∞]: [1, 5]
+Can be zero? False
+
+=== Soundness Tests ===
+
+Concrete values: [10, 15, 12]
+Abstract: [10, 15]
+All values covered? True
+
+Concrete: 7 + 3 = 10
+Abstract: SignedInterval(low=7, high=7, bit_width=32) + SignedInterval(low=3, high=3, bit_width=32) = [10, 10]
+Sound? True
+
+=== 3-Valued Logic Truth Tables ===
+
+AND Truth Table:
+  A │ B │ A∧B
+────┼───┼────
+  0 │ 0 │ 0
+  0 │ 1 │ 0
+  0 │ ⊥ │ 0
+  1 │ 0 │ 0
+  1 │ 1 │ 1
+  1 │ ⊥ │ ⊥
+  ⊥ │ 0 │ 0
+  ⊥ │ 1 │ ⊥
+  ⊥ │ ⊥ │ ⊥
+
+OR Truth Table:
+  A │ B │ A∨B
+────┼───┼────
+  0 │ 0 │ 0
+  0 │ 1 │ 1
+  0 │ ⊥ │ ⊥
+  1 │ 0 │ 1
+  1 │ 1 │ 1
+  1 │ ⊥ │ 1
+  ⊥ │ 0 │ ⊥
+  ⊥ │ 1 │ 1
+  ⊥ │ ⊥ │ ⊥
+
+======================================================================
+  All tests completed
+======================================================================
+
+
